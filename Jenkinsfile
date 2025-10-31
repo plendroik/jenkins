@@ -15,6 +15,10 @@ pipeline {
             }
         }
         stage('3. Modeli Egit ve MLflowa Kaydet (Train)') {
+            environment {
+                // Python'a tüm I/O işlemleri için UTF-8 kullanmasını söyler
+                PYTHONUTF8 = '1'
+            }
             steps {
                 powershell 'python train.py'
             }
