@@ -1,19 +1,19 @@
-pipeline {
+    pipeline {
     agent any 
 
     stages {
-        stage('1. Kodu Çek (Checkout)') {
+        stage('1. Kodu Cek (Checkout)') {
             steps {
                 checkout scm
             }
         }
-        stage('2. Ortamı Kur (Setup)') {
+        stage('2. OrtamiS Kur (Setup)') {
             steps {
                 bat 'python -m pip install --upgrade pip'
                 bat 'python -m pip install -r requirements.txt'
             }
         }
-        stage('3. Modeli Eğit ve MLflowa Kaydet (Train)') {
+        stage('3. Modeli Egit ve MLflowa Kaydet (Train)') {
             steps {
                 bat 'python main.py'
             }

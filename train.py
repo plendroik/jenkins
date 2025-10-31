@@ -66,45 +66,34 @@ def load_and_merge_data():
     df = df.sample(frac=1, random_state=1).reset_index(drop=True)
     df['id'] = df.index + 1
     
-    # Feature Engineering (Sizin kodunuzdan alındı)
     df['message_len'] = df['message'].apply(len)
     df['word_count'] = df['message'].apply(lambda x: len(str(x).split()))
     df['has_link'] = df['message'].str.contains('http|www|https', regex=True).astype(int)
     df['digit_count'] = df['message'].str.count(r'\d').fillna(0).astype(int)
     
-    # 'message' sütunundaki eksik değerleri temizle
     df['message'] = df['message'].fillna('') 
     return df
 
-# --- 4. Ana Model Eğitme Fonksiyonu ---
 
 def main():
     print("Veri yükleme ve birleştirme işlemi başlıyor...")
     data = load_and_merge_data()
     print("Veri yüklendi. Özellikler oluşturuldu.")
 
-    # Modelde kullanılacak özellikleri ve hedefi belirle
     label_col = 'label'
     text_feature = 'message'
     numeric_features = ['message_len', 'word_count', 'has_link', 'digit_count']
 
-    # Veriyi Train/Test olarak ayır
     X = data[numeric_features + [text_feature]]
     y = data[label_col]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Scikit-learn Pipeline Oluşturma
-    # 1. Metin verisi için TfidfVectorizer
-    # 2. Sayısal veriler için StandardScaler
-    # 3. Bunları bir ColumnTransformer ile birleştir
-    # 4. Bir LogisticRegression modeli ile eğit
-    
     preprocessor = ColumnTransformer(
         transformers=[
             ('text', TfidfVectorizer(), text_feature),
             ('numeric', StandardScaler(), numeric_features)
         ],
-        remainder='drop' # Kullanılmayan diğer sütunları at
+        remainder='drop' # 
     )
 
     pipeline = Pipeline(steps=[
@@ -117,32 +106,26 @@ def main():
         run_id = run.info.run_id
         print(f"Run ID: {run_id}")
         
-        # Parametreleri kaydet
         mlflow.log_param("model_type", "LogisticRegression")
         mlflow.log_param("text_vectorizer", "TfidfVectorizer")
         mlflow.log_param("numeric_scaler", "StandardScaler")
         mlflow.log_param("train_test_split_ratio", 0.2)
         mlflow.log_param("dataset_size", len(data))
 
-        # Modeli eğit
         print("Model eğitimi başlıyor...")
         pipeline.fit(X_train, y_train)
         print("Model eğitimi tamamlandı.")
 
-        # Test seti üzerinde tahmin yap
         y_pred = pipeline.predict(X_test)
 
-        # Metrikleri hesapla
         accuracy = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred, average='weighted')
 
-        # Metrikleri MLflow'a kaydet
         mlflow.log_metric("test_accuracy", accuracy)
         mlflow.log_metric("test_f1_score", f1)
         
         print(f"Test Sonuçları: Accuracy = {accuracy:.4f}, F1 Score = {f1:.4f}")
 
-        # Modeli MLflow'a kaydet
         mlflow.sklearn.log_model(pipeline, "model")
         print("Model, MLflow'a 'model' adıyla kaydedildi.")
 
