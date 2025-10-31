@@ -1,4 +1,4 @@
-    pipeline {
+pipeline {
     agent any 
 
     stages {
@@ -7,21 +7,22 @@
                 checkout scm
             }
         }
-        stage('2. OrtamiS Kur (Setup)') {
+        stage('2. Ortami Kur (Setup)') {
             steps {
-                bat 'python -m pip install --upgrade pip'
-                bat 'python -m pip install -r requirements.txt'
+
+                powershell 'python -m pip install --upgrade pip'
+                powershell 'python -m pip install -r requirements.txt'
             }
         }
         stage('3. Modeli Egit ve MLflowa Kaydet (Train)') {
             steps {
-                bat 'python train.py'
+                powershell 'python train.py'
             }
         }
     }
     post {
         always {
-            echo 'Windows Pipeline bitti.'
+            echo 'Windows Pipeline (PowerShell ile) bitti.'
         }
     }
 }
