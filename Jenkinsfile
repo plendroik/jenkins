@@ -15,7 +15,7 @@
         }
         stage('3. Modeli Egit ve MLflowa Kaydet (Train)') {
             steps {
-                bat 'python main.py'
+                bat 'python train.py'
             }
         }
     }
