@@ -1,3 +1,6 @@
 pandas
 mlflow
 scikit-learn
+dvc[s3]
+autogluon.multimodal
+awscli
