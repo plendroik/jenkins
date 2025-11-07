@@ -45,7 +45,7 @@ pipeline {
             steps {
                 powershell 'dvc add data/training_state.json automm_sms_model'
                 powershell 'dvc push'
-                powershell 'echo "Yeni model ve durum S3''e gonderildi."'
+                powershell 'echo "Yeni model ve durum S3e gonderildi.'
             }
         }
         stage('6. Isaretcileri Kaydet (Git Push)') {
