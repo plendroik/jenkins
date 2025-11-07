@@ -12,7 +12,7 @@ EXPERIMENT_NAME = "AutoML_SMS_Simulasyon"
 MODEL_PATH = "automm_sms_model"            
 DATA_PATH = "data/final_processed_data.csv" 
 STATE_PATH = "data/training_state.json"     
-BATCH_SIZE = 50   
+BATCH_SIZE = 2000
 
 def load_state():
     if os.path.exists(STATE_PATH):
