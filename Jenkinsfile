@@ -4,7 +4,6 @@ pipeline {
     environment {
         MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'
         
-
         AWS_ACCESS_KEY_ID     = credentials('jenkins-aws-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('jenkins-aws-secret-key')
         AWS_DEFAULT_REGION    = 'eu-north-1'
@@ -24,14 +23,12 @@ pipeline {
             }
         }
         
-        
         stage('3. Veri, Model ve Durumu Cek (DVC)') {
             steps {
-        
                 powershell 'dvc pull data/final_processed_data.csv.dvc -f'
                 
                 powershell '''
-                $ErrorActionPreference = "Stop" // <-- HERHANGI BIR HATAYI YAKALAMAK ICIN EKLENDI
+                $ErrorActionPreference = "Stop" 
                 try {
                     dvc pull data/training_state.json.dvc -f
                     echo "Onceki 'training_state.json' cekildi."
@@ -41,7 +38,7 @@ pipeline {
                 '''
                 
                 powershell '''
-                $ErrorActionPreference = "Stop" // <-- HERHANGI BIR HATAYI YAKALAMAK ICIN EKLENDI
+                $ErrorActionPreference = "Stop" 
                 try {
                     dvc pull automm_sms_model.dvc -f
                     echo "Onceki 'automm_sms_model' cekildi."
@@ -53,7 +50,6 @@ pipeline {
                 powershell 'echo "DVC pull adimi tamamlandi."'
             }
         }
-        
 
         stage("4. Bir Sonraki Batch'i Egit (Simulasyon)") {
             environment {
