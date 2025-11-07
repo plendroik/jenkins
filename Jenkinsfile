@@ -10,7 +10,6 @@ pipeline {
     }
 
     stages {
-        
         stage('1. Kodu Cek (Git)') {
             steps {
                 checkout scm
@@ -26,27 +25,25 @@ pipeline {
         stage('3. Veri, Model ve Durumu Cek (DVC)') {
             steps {
                 powershell 'dvc pull data/final_processed_data.csv.dvc -f'
-                
                 powershell 'dvc pull data/training_state.json.dvc -f; if ($?) { $LASTEXITCODE = 0 }'
-                
                 powershell 'dvc pull automm_sms_model.dvc -f; if ($?) { $LASTEXITCODE = 0 }'
-                
                 powershell 'echo "DVC pull tamamlandi (Veri, Model ve Durum)."'
             }
         }
-        stage('4. Bir Sonraki Batch''i Egit (Simulasyon)') {
+        
+        stage("4. Bir Sonraki Batch'i Egit (Simulasyon)") {
+            environment {
+                PYTHONUTF8 = '1'
+            }
             steps {
-                environment{
-                    PYTHONUTF8 = '1'
-                }
                 powershell 'python train.py'
                 powershell 'echo "Egitim tamamlandi."'
             }
         }
+
         stage('5. Yeni Model ve Durumu Kaydet (DVC Push)') {
             steps {
                 powershell 'dvc add data/training_state.json automm_sms_model'
-                
                 powershell 'dvc push'
                 powershell 'echo "Yeni model ve durum S3''e gonderildi."'
             }
@@ -55,9 +52,7 @@ pipeline {
             steps {
                 powershell 'git config --global user.email "jenkins-ci@example.com"'
                 powershell 'git config --global user.name "Jenkins CI"'
-                
                 powershell 'git add data/training_state.json.dvc automm_sms_model.dvc'
-                
                 powershell '''
                 if ( (git diff-index --quiet HEAD).ExitCode -ne 0 ) {
                     git commit -m "CI: Simulasyonun yeni adimi (model ve durum) eklendi [skip ci]"
