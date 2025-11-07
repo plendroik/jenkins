@@ -23,13 +23,20 @@ pipeline {
             }
         }
         
-        
         stage('3. Veri, Model ve Durumu Cek (DVC)') {
             steps {
-                
                 powershell 'dvc pull data/final_processed_data.csv.dvc -f'
                 powershell 'dvc pull data/training_state.json.dvc -f'
-                powershell 'dvc pull automm_sms_model.dvc -f'
+                
+                powershell '''
+                $ErrorActionPreference = "Stop"
+                try {
+                    dvc pull automm_sms_model.dvc -f
+                    echo "Onceki 'automm_sms_model' cekildi."
+                } catch {
+                    echo "Onceki 'automm_sms_model' bulunamadi (Ilk calistirma, bu normaldir)."
+                }
+                '''
                 
                 powershell 'echo "DVC pull adimi tamamlandi (Veri, Model ve Durum)."'
             }

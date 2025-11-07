@@ -5,6 +5,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import json
 
+# --- Ayarlar ---
 MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 EXPERIMENT_NAME = "AutoML_SMS_Simulasyon"
 MODEL_PATH = "automm_sms_model"            
@@ -13,25 +14,21 @@ STATE_PATH = "data/training_state.json"
 BATCH_SIZE = 50                             
 
 def load_state():
-    """Önceki 'görülen' ID'leri ve batch numarasını yükler."""
     if os.path.exists(STATE_PATH):
         with open(STATE_PATH, 'r') as f:
             state = json.load(f)
             state['seen_ids'] = set(state.get('seen_ids', []))
             return state
     
-   
+    print(f"UYARI: '{STATE_PATH}' bulunamadi, sifirdan olusturuluyor.")
     return {'seen_ids': set(), 'batch_num': 0}
 
 def save_state(seen_ids, batch_num):
-    """Yeni durumu (state) diske kaydeder."""
     with open(STATE_PATH, 'w') as f:
-        
         state = {'seen_ids': list(seen_ids), 'batch_num': batch_num}
         json.dump(state, f, indent=4)
 
 def main():
-    
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
     try: exp_id = client.create_experiment(EXPERIMENT_NAME)
@@ -39,7 +36,6 @@ def main():
     mlflow.set_experiment(EXPERIMENT_NAME)
     print(f"MLflow deneyi '{EXPERIMENT_NAME}' (ID: {exp_id}) ayarlandi.")
 
-    
     print(f"Tüm veri havuzu '{DATA_PATH}' dosyasından yükleniyor...")
     try:
         all_data = pd.read_csv(DATA_PATH)
@@ -54,9 +50,7 @@ def main():
     batch_num = state['batch_num']
     print(f"Daha önce {len(seen_ids)} adet örnek işlenmiş.")
 
-    
     label_col = 'label'
-    
     unseen_data = all_data[~all_data['id'].isin(seen_ids)]
 
     if len(unseen_data) == 0:
@@ -68,12 +62,8 @@ def main():
     batch_to_train = unseen_data.sample(n=min(BATCH_SIZE, len(unseen_data)), random_state=42)
     print(f"Toplam {len(unseen_data)} görülmemiş örnek bulundu. {len(batch_to_train)} adetlik yeni batch işlenecek.")
 
-    try:
-        predictor = MultiModalPredictor.load(MODEL_PATH)
-        print(f"Mevcut model '{MODEL_PATH}' klasöründen yüklendi. Fine-tuning başlıyor...")
-    except:
-        print(f"Mevcut model '{MODEL_PATH}' bulunamadı. Sıfırdan eğitim başlıyor...")
-        predictor = MultiModalPredictor(label=label_col, path=MODEL_PATH)
+    print(f"Model '{MODEL_PATH}' klasöründen yüklenecek veya sıfırdan oluşturulacak...")
+    predictor = MultiModalPredictor(label=label_col, path=MODEL_PATH)
 
     batch_num += 1
     with mlflow.start_run(run_name=f"sim_batch_{batch_num}") as run:
