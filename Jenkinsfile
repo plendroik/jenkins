@@ -4,7 +4,7 @@ pipeline {
     environment {
         MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'
         
-        // Jenkins Credentials ID'leri (GUVENLI YONTEM)
+
         AWS_ACCESS_KEY_ID     = credentials('jenkins-aws-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('jenkins-aws-secret-key')
         AWS_DEFAULT_REGION    = 'eu-north-1'
@@ -24,14 +24,14 @@ pipeline {
             }
         }
         
-        // *** DUZELTME BURADA BASLIYOR ***
+        
         stage('3. Veri, Model ve Durumu Cek (DVC)') {
             steps {
-                // 1. Ana veriyi cek (Bu basarili olmali)
+        
                 powershell 'dvc pull data/final_processed_data.csv.dvc -f'
                 
-                // 2. Durum dosyasini cek (try...catch ile)
                 powershell '''
+                $ErrorActionPreference = "Stop" // <-- HERHANGI BIR HATAYI YAKALAMAK ICIN EKLENDI
                 try {
                     dvc pull data/training_state.json.dvc -f
                     echo "Onceki 'training_state.json' cekildi."
@@ -40,8 +40,8 @@ pipeline {
                 }
                 '''
                 
-                // 3. Model dosyasini cek (try...catch ile)
                 powershell '''
+                $ErrorActionPreference = "Stop" // <-- HERHANGI BIR HATAYI YAKALAMAK ICIN EKLENDI
                 try {
                     dvc pull automm_sms_model.dvc -f
                     echo "Onceki 'automm_sms_model' cekildi."
@@ -53,7 +53,7 @@ pipeline {
                 powershell 'echo "DVC pull adimi tamamlandi."'
             }
         }
-        // *** DUZELTME BURADA BITIYOR ***
+        
 
         stage("4. Bir Sonraki Batch'i Egit (Simulasyon)") {
             environment {
@@ -68,7 +68,7 @@ pipeline {
             steps {
                 powershell 'dvc add data/training_state.json automm_sms_model'
                 powershell 'dvc push'
-                powershell 'echo "Yeni model ve durum S3e gonderildi."'
+                powershell 'echo "Yeni model ve durum S3''e gonderildi."'
             }
         }
         stage('6. Isaretcileri Kaydet (Git Push)') {
