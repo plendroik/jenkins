@@ -12,7 +12,8 @@ pipeline {
     stages {
         stage('1. Kodu Cek (Git)') {
             steps {
-                checkout scm
+                
+                checkout scm: [$class: 'GitSCM', branches: [[name: '*/main']]], poll: false
                 powershell 'echo "Kod cekildi."'
             }
         }
@@ -66,7 +67,9 @@ pipeline {
                 powershell '''
                 if ( (git diff-index --quiet HEAD).ExitCode -ne 0 ) {
                     git commit -m "CI: Simulasyonun yeni adimi (model ve durum) eklendi [skip ci]"
-                    git push
+                    
+                    git push origin HEAD:main
+                    
                     echo "Yeni model ve durum isaretcileri Git''e gonderildi."
                 } else {
                     echo "Model veya durumda degisiklik yok, Git push atlaniyor."
