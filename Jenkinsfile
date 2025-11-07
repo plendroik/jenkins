@@ -27,44 +27,22 @@ pipeline {
             steps {
                 powershell 'dvc pull data/final_processed_data.csv.dvc -f'
                 
+                powershell 'dvc pull data/training_state.json.dvc -f'
+                
                 powershell '''
                 $ErrorActionPreference = "Stop" 
                 try {
-                    dvc pull data/training_state.json.dvc -f
-                    
-                    # DVC'nin cikis kodunu MANUEL kontrol et
-                    if ($LASTEXITCODE -ne 0) {
-                        # DVC'nin hatasini 'catch' blogunun yakalayacagi bir hataya donustur
-                        throw "DVC pull (state) basarisiz oldu, exit code: $LASTEXITCODE" 
-                    }
-                    echo "Onceki 'training_state.json' cekildi."
-                } catch {
-                    # Hata basariyla yakalandi, bu ilk calistirma olabilir
-                    echo "Onceki 'training_state.json' bulunamadi (Ilk calistirma, bu normaldir)."
-                }
-                '''
-                
-                powershell '''
-                $ErrorActionPreference = "Stop"
-                try {
                     dvc pull automm_sms_model.dvc -f
-                    
-                    # DVC'nin cikis kodunu MANUEL kontrol et
-                    if ($LASTEXITCODE -ne 0) {
-                        # DVC'nin hatasini 'catch' blogunun yakalayacagi bir hataya donustur
-                        throw "DVC pull (model) basarisiz oldu, exit code: $LASTEXITCODE"
-                    }
                     echo "Onceki 'automm_sms_model' cekildi."
                 } catch {
-                    # Hata basariyla yakalandi, bu ilk calistirma olabilir
-                    echo "Onceki 'automm_sms_model' bulunamadi (Ilk calistirma, bu normaldir)."
+                    echo "Onceki 'automm_sms_model' bulunamadi (Ilk calistirma)."
                 }
                 '''
                 
                 powershell 'echo "DVC pull adimi tamamlandi."'
             }
         }
-        
+
         stage("4. Bir Sonraki Batch'i Egit (Simulasyon)") {
             environment {
                 PYTHONUTF8 = '1'
