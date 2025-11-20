@@ -3,3 +3,4 @@
 ['remote "myremote"']
     url = s3://mlops-proje/dvc-store
     region = eu-north-1
+    auth_type = access_key
