@@ -7,8 +7,7 @@ pipeline {
         AWS_CREDS = credentials('aws-s3-credentials')
         
         AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
-        AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}" 
-        
+        AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}"
         AWS_DEFAULT_REGION    = 'eu-north-1' 
         
         GIT_CREDS = credentials('github-pat') 
@@ -18,7 +17,7 @@ pipeline {
         stage('1. Kodu Cek (Git)') {
             steps {
                 checkout scm: [$class: 'GitSCM', branches: [[name: '*/main']]], poll: false
-                powershell 'echo "Kod cekildi."'
+                powershell 'echo "Kod GitHub''dan cekildi."'
             }
         }
 
@@ -35,21 +34,22 @@ pipeline {
                 powershell './venv/Scripts/dvc pull data/processed/final_data.csv.dvc -f'
                 
                 powershell '''
-                try {
-                    ./venv/Scripts/dvc pull data/training_state.json.dvc -f
-                } catch {
-                    echo "State dosyasi henüz yok, sorun değil."
-                }
+                    if (Test-Path "data/training_state.json.dvc") {
+                        echo "State dosyasi bulundu, indiriliyor..."
+                        ./venv/Scripts/dvc pull data/training_state.json.dvc -f
+                    } else {
+                        echo "BILGI: State dosyasi henuz yok (Ilk calistirma). Pas geciliyor."
+                    }
                 '''
-
+,
                 powershell '''
-                $ErrorActionPreference = "Stop"
-                try {
-                    ./venv/Scripts/dvc pull models/automm_sms_model.dvc -f
-                    echo "Onceki model cekildi."
-                } catch {
-                    echo "Onceki model bulunamadi (Ilk calistirma), sifirdan egitilecek."
-                }
+                    $ErrorActionPreference = "Continue"
+                    if (Test-Path "models/automm_sms_model.dvc") {
+                        echo "Onceki model bulundu, indiriliyor..."
+                        ./venv/Scripts/dvc pull models/automm_sms_model.dvc -f
+                    } else {
+                        echo "BILGI: Onceki model henuz yok (Ilk calistirma). Sifirdan egitilecek."
+                    }
                 '''
             }
         }
@@ -59,6 +59,7 @@ pipeline {
                 PYTHONUTF8 = '1'
             }
             steps {
+                // Python kodunu çalıştır
                 powershell './venv/Scripts/python src/train.py'
                 powershell 'echo "Egitim tamamlandi."'
             }
@@ -67,7 +68,15 @@ pipeline {
         stage('5. S3e Yukle (DVC Push)') {
             steps {
                 powershell './venv/Scripts/dvc add models/automm_sms_model'
+                
+                powershell '''
+                    if (Test-Path "data/training_state.json") {
+                        ./venv/Scripts/dvc add data/training_state.json
+                    }
+                '''
+
                 powershell './venv/Scripts/dvc push'
+                powershell 'echo "Veriler S3 bucket''a (Stockholm) gonderildi."'
             }
         }
 
@@ -78,18 +87,22 @@ pipeline {
                 
                 powershell 'git add models/automm_sms_model.dvc'
                 
+                powershell '''
+                    if (Test-Path "data/training_state.json.dvc") {
+                        git add data/training_state.json.dvc
+                    }
+                '''
                 
                 powershell '''
                 if ( (git diff-index --quiet HEAD).ExitCode -ne 0 ) {
                     git commit -m "CI: Yeni model egitildi [skip ci]"
                     
-                    # KRİTİK: Şifre sormaması için URL içine Token gömüyoruz
-                    # Windows Powershell string interpolation için syntax:
-                    git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/KULLANICI_ADIN/sms-automl-project.git HEAD:main
+                    # Token kullanarak güvenli Push
+                    git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/plendroik/jenkins.git HEAD:main
                     
                     echo "Git Push basarili."
                 } else {
-                    echo "Degisiklik yok."
+                    echo "Model veya durumda degisiklik yok, Git push atlaniyor."
                 }
                 '''
             }
@@ -98,8 +111,10 @@ pipeline {
     
     post {
         always {
-            echo 'Pipeline bitti.'
-            
+            echo 'Pipeline islemi bitti.'
+        }
+        failure {
+            echo 'Pipeline HATA aldi. Lutfen loglari kontrol et.'
         }
     }
 }
