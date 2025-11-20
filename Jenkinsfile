@@ -4,11 +4,13 @@ pipeline {
     environment {
         MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'
         
+      
         AWS_CREDS = credentials('aws-s3-credentials')
         AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
         AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}"
         AWS_DEFAULT_REGION    = 'eu-north-1' 
         
+      
         GIT_CREDS = credentials('github-pat') 
     }
 
@@ -16,7 +18,7 @@ pipeline {
         stage('1. Kodu Cek (Git)') {
             steps {
                 checkout scm: [$class: 'GitSCM', branches: [[name: '*/main']]], poll: false
-                powershell 'echo "Kod GitHubdan cekildi."'
+                powershell 'echo "Kod GitHub''dan cekildi."'
             }
         }
 
@@ -30,7 +32,10 @@ pipeline {
 
         stage('3. Guvenlik Envanteri (AI-BOM)') {
             steps {
-                powershell './venv/Scripts/cyclonedx-py environment --outfile ai_bom.json'
+                
+                powershell './venv/Scripts/cyclonedx-py requirements requirements.txt --output-format json --output-file ai_bom.json'
+                
+                
                 archiveArtifacts artifacts: 'ai_bom.json', fingerprint: true
                 powershell 'echo "AI-BOM oluşturuldu."'
             }
@@ -56,6 +61,7 @@ pipeline {
                 PYTHONUTF8 = '1'
             }
             steps {
+                
                 powershell './venv/Scripts/python src/train.py'
                 powershell 'echo "Egitim ve Guvenlik taramasi tamamlandi."'
             }
@@ -106,7 +112,7 @@ pipeline {
             echo 'Pipeline bitti.'
         }
         failure {
-            echo 'HATA: Guvenlik taramasi veya egitim basarisiz oldu.'
+            echo 'HATA: Pipeline basarisiz oldu.'
         }
     }
 }
