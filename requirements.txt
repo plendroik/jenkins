@@ -1,0 +1,7 @@
+pandas
+mlflow
+dvc[s3]
+boto3
+autogluon
+python-dotenv
+scikit-learn
