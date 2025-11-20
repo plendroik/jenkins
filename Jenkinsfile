@@ -4,8 +4,11 @@ pipeline {
     environment {
         MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'
         
-        AWS_ACCESS_KEY_ID     = credentials('aws-s3-credentials')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-s3-credentials') 
+        AWS_CREDS = credentials('aws-s3-credentials')
+        
+        AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
+        AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}" 
+        
         AWS_DEFAULT_REGION    = 'eu-north-1' 
         
         GIT_CREDS = credentials('github-pat') 
