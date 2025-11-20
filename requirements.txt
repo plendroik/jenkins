@@ -5,3 +5,5 @@ boto3
 autogluon
 python-dotenv
 scikit-learn
+modelscan        # model dosyasını tarar
+cyclonedx-bom    # sbom

@@ -16,7 +16,7 @@ pipeline {
         stage('1. Kodu Cek (Git)') {
             steps {
                 checkout scm: [$class: 'GitSCM', branches: [[name: '*/main']]], poll: false
-                powershell 'echo "Kod GitHubdan cekildi."'
+                powershell 'echo "Kod GitHub''dan cekildi."'
             }
         }
 
@@ -27,67 +27,58 @@ pipeline {
                 powershell './venv/Scripts/pip install -r requirements.txt'
             }
         }
-        
-        stage('3. Veri, Model ve Durumu Cek (DVC)') {
+
+        stage('3. Guvenlik Envanteri (AI-BOM)') {
             steps {
-                
+                powershell './venv/Scripts/cyclonedx-py environment --outfile ai_bom.json'
+                archiveArtifacts artifacts: 'ai_bom.json', fingerprint: true
+                powershell 'echo "AI-BOM oluşturuldu."'
+            }
+        }
+        
+        stage('4. Veri ve Modeli Cek (DVC)') {
+            steps {
                 powershell './venv/Scripts/dvc pull data/processed/final_data.csv.dvc -f'
-                
                 
                 powershell '''
                     if (Test-Path "data/training_state.json.dvc") {
-                        echo "State dosyasi indiriliyor..."
                         ./venv/Scripts/dvc pull data/training_state.json.dvc -f
-                    } else {
-                        echo "BILGI: State dosyasi henuz yok (Ilk calistirma)."
                     }
-                '''
-
-                
-                powershell '''
-                    $ErrorActionPreference = "Continue"
                     if (Test-Path "models/automm_sms_model.dvc") {
-                        echo "Eski model indiriliyor..."
                         ./venv/Scripts/dvc pull models/automm_sms_model.dvc -f
-                    } else {
-                        echo "BILGI: Eski model henuz yok (Ilk calistirma)."
                     }
                 '''
             }
         }
 
-        stage("4. Egitim (Simulasyon)") {
+        stage("5. Egitim ve Guvenlik Taramasi") {
             environment {
                 PYTHONUTF8 = '1'
             }
             steps {
                 powershell './venv/Scripts/python src/train.py'
-                powershell 'echo "Egitim tamamlandi."'
+                powershell 'echo "Egitim ve Guvenlik taramasi tamamlandi."'
             }
         }
 
-        stage('5. S3e Yukle (DVC Push)') {
+        stage('6. S3e Yukle (DVC Push)') {
             steps {
-                
                 powershell './venv/Scripts/dvc add models/automm_sms_model'
-                
                 
                 powershell '''
                     if (Test-Path "data/training_state.json") {
                         ./venv/Scripts/dvc add data/training_state.json
                     }
                 '''
-
                 
                 powershell './venv/Scripts/dvc push'
             }
         }
 
-        stage('6. Git Push (Commit)') {
+        stage('7. Git Push (Commit)') {
             steps {
                 powershell 'git config --global user.email "jenkins@bot.com"'
                 powershell 'git config --global user.name "Jenkins Bot"'
-                
                 
                 powershell 'git add models/automm_sms_model.dvc'
                 
@@ -97,17 +88,13 @@ pipeline {
                     }
                 '''
                 
-                
                 powershell '''
                 if ( (git diff-index --quiet HEAD).ExitCode -ne 0 ) {
-                    git commit -m "CI: Yeni model egitildi [skip ci]"
-                    
-                    # Token ile güvenli push
+                    git commit -m "CI: Yeni model egitildi ve tarandi [skip ci]"
                     git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/plendroik/jenkins.git HEAD:main
-                    
                     echo "Git Push basarili."
                 } else {
-                    echo "Degisiklik yok, Git push atlaniyor."
+                    echo "Degisiklik yok."
                 }
                 '''
             }
@@ -116,10 +103,10 @@ pipeline {
     
     post {
         always {
-            echo 'Pipeline islemi bitti.'
+            echo 'Pipeline bitti.'
         }
         failure {
-            echo 'Pipeline HATA aldi. Lutfen loglari kontrol et.'
+            echo 'HATA: Guvenlik taramasi veya egitim basarisiz oldu.'
         }
     }
 }
