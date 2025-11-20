@@ -5,7 +5,6 @@ pipeline {
         MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'
         
         AWS_CREDS = credentials('aws-s3-credentials')
-        
         AWS_ACCESS_KEY_ID     = "${AWS_CREDS_USR}"
         AWS_SECRET_ACCESS_KEY = "${AWS_CREDS_PSW}"
         AWS_DEFAULT_REGION    = 'eu-north-1' 
@@ -31,24 +30,27 @@ pipeline {
         
         stage('3. Veri, Model ve Durumu Cek (DVC)') {
             steps {
+                
                 powershell './venv/Scripts/dvc pull data/processed/final_data.csv.dvc -f'
+                
                 
                 powershell '''
                     if (Test-Path "data/training_state.json.dvc") {
-                        echo "State dosyasi bulundu, indiriliyor..."
+                        echo "State dosyasi indiriliyor..."
                         ./venv/Scripts/dvc pull data/training_state.json.dvc -f
                     } else {
-                        echo "BILGI: State dosyasi henuz yok (Ilk calistirma). Pas geciliyor."
+                        echo "BILGI: State dosyasi henuz yok (Ilk calistirma)."
                     }
                 '''
-,
+
+                
                 powershell '''
                     $ErrorActionPreference = "Continue"
                     if (Test-Path "models/automm_sms_model.dvc") {
-                        echo "Onceki model bulundu, indiriliyor..."
+                        echo "Eski model indiriliyor..."
                         ./venv/Scripts/dvc pull models/automm_sms_model.dvc -f
                     } else {
-                        echo "BILGI: Onceki model henuz yok (Ilk calistirma). Sifirdan egitilecek."
+                        echo "BILGI: Eski model henuz yok (Ilk calistirma)."
                     }
                 '''
             }
@@ -59,7 +61,6 @@ pipeline {
                 PYTHONUTF8 = '1'
             }
             steps {
-                // Python kodunu çalıştır
                 powershell './venv/Scripts/python src/train.py'
                 powershell 'echo "Egitim tamamlandi."'
             }
@@ -67,7 +68,9 @@ pipeline {
 
         stage('5. S3e Yukle (DVC Push)') {
             steps {
+                
                 powershell './venv/Scripts/dvc add models/automm_sms_model'
+                
                 
                 powershell '''
                     if (Test-Path "data/training_state.json") {
@@ -75,8 +78,8 @@ pipeline {
                     }
                 '''
 
+                
                 powershell './venv/Scripts/dvc push'
-                powershell 'echo "Veriler S3 bucket''a (Stockholm) gonderildi."'
             }
         }
 
@@ -84,6 +87,7 @@ pipeline {
             steps {
                 powershell 'git config --global user.email "jenkins@bot.com"'
                 powershell 'git config --global user.name "Jenkins Bot"'
+                
                 
                 powershell 'git add models/automm_sms_model.dvc'
                 
@@ -93,16 +97,17 @@ pipeline {
                     }
                 '''
                 
+                
                 powershell '''
                 if ( (git diff-index --quiet HEAD).ExitCode -ne 0 ) {
                     git commit -m "CI: Yeni model egitildi [skip ci]"
                     
-                    # Token kullanarak güvenli Push
+                    # Token ile güvenli push
                     git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/plendroik/jenkins.git HEAD:main
                     
                     echo "Git Push basarili."
                 } else {
-                    echo "Model veya durumda degisiklik yok, Git push atlaniyor."
+                    echo "Degisiklik yok, Git push atlaniyor."
                 }
                 '''
             }
