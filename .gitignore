@@ -1,5 +1,7 @@
 .env
 venv/
 mlruns/
-models/
 __pycache__/
+models/*
+!models/*.dvc
+!models/.gitignore
