@@ -6,7 +6,7 @@ import mlflow
 from sklearn.model_selection import train_test_split
 import shutil
 import json
-from modelscan import ModelScan  
+from modelscan.modelscan import ModelScan
 
 DATA_PATH = "data/processed/final_data.csv"
 MODEL_OUTPUT_DIR = "models/automm_sms_model"
