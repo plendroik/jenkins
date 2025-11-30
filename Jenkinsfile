@@ -21,7 +21,7 @@ pipeline {
         stage('1. Kodu Cek (Git)') {
             steps {
                 checkout scm: [$class: 'GitSCM', branches: [[name: '*/main']]], poll: false
-                powershell 'echo "Kod GitHub''dan cekildi."'
+                powershell 'echo "Kod GitHubdan cekildi."'
             }
         }
 
