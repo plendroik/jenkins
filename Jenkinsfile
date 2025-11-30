@@ -109,7 +109,7 @@ pipeline {
 
                 
                 powershell './venv/Scripts/dvc push'
-                powershell 'echo "Veriler S3 bucket''a (Stockholm) gonderildi."'
+                powershell 'echo "Veriler S3 bucketa (Stockholm) gonderildi."'
             }
         }
 
