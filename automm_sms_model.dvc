@@ -1,6 +1,6 @@
 outs:
-- md5: 6ffbaaad7b4ac6e1afabed19a80b2560.dir
-  size: 0
-  nfiles: 1
+- md5: fce572e78747196d9a94eb320d2afa62.dir
+  size: 443685223
+  nfiles: 13
   hash: md5
   path: automm_sms_model
