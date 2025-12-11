@@ -72,7 +72,8 @@ pipeline {
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
                         
-                        python src/train.py
+                        # DUZELTME: train.py artik ana dizinde
+                        python train.py
                     '''
                 }
             }
@@ -97,9 +98,7 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        
-                        # DÜZELTME: --outfile yerine --output-file kullanıyoruz
-                        # Ayrıca "force" parametresi ekleyerek üzerine yazmayı garantiye alalım
+                        # DUZELTME: --outfile yerine --output-file kullanıldı
                         cyclonedx-py requirements requirements.txt --output-format json --output-file sbom.json --force
                     '''
                 }
