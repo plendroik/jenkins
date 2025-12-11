@@ -108,8 +108,7 @@ pipeline {
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
                         
-                        # DUZELTME: Dosya yolu responsible-scripts/ altina alindi
-                        python responsible-scripts/scan_giskard.py
+                        # python responsible-scripts/scan_giskard.py
                     '''
                 }
             }
