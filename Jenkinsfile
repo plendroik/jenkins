@@ -47,13 +47,13 @@ pipeline {
             steps {
                 script {
                     echo "HIZLI TEST MODU: Egitim asamasi zaman kazanmak icin atlandi."
-                    // powershell '''
-                    //    $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                    //    $env:PYTHONPATH = "$PWD"
-                    //    $env:PYTHONWARNINGS = "ignore"
-                    //    $env:PYTHONIOENCODING = "utf-8"
-                    //    python train.py
-                    // '''
+                     powershell '''
+                        $env:Path = "$PWD\\venv\\Scripts;$env:Path"
+                        $env:PYTHONPATH = "$PWD"
+                        $env:PYTHONWARNINGS = "ignore"
+                        $env:PYTHONIOENCODING = "utf-8"
+                        python train.py
+                     '''
                 }
             }
         }
@@ -62,13 +62,13 @@ pipeline {
             steps {
                 script {
                     echo "HIZLI TEST MODU: Garak asamasi atlandi."
-                    // powershell '''
-                    //    $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                    //    $env:PYTHONWARNINGS = "ignore"
-                    //    $env:PYTHONIOENCODING = "utf-8"
-                    //    # DUZELTME: Klasor yolu eklendi
-                    //    python responsible-scripts/run_garak.py
-                    // '''
+                     powershell '''
+                        $env:Path = "$PWD\\venv\\Scripts;$env:Path"
+                        $env:PYTHONWARNINGS = "ignore"
+                        $env:PYTHONIOENCODING = "utf-8"
+                        # DUZELTME: Klasor yolu eklendi
+                        python responsible-scripts/run_garak.py
+                     '''
                 }
             }
         }
