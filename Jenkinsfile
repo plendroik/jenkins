@@ -107,8 +107,8 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        # --outfile yerine --output-file
-                        cyclonedx-py requirements requirements.txt --output-format json --output-file sbom.json --force
+                        
+                        cyclonedx-py requirements requirements.txt --output-format json --output-file sbom.json
                     '''
                 }
             }
