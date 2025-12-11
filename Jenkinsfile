@@ -55,8 +55,14 @@ pipeline {
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONWARNINGS = "ignore"
                         
+                        echo "DVC: Veri ve Modeller çekiliyor..."
+                        
+                        # Veri yolu (bu değişmedi, processed içinde)
                         dvc pull data/processed/final_data.csv.dvc -f
-                        try { dvc pull models/automm_sms_model.dvc -f } catch { echo "Model yok, sıfırdan eğitim." }
+                        
+                        # DUZELTME: Model DVC dosyası artık ana dizinde
+                        try { dvc pull automm_sms_model.dvc -f } catch { echo "Model yok, sıfırdan eğitim." }
+                        
                         try { dvc pull data/training_state.json.dvc -f } catch { echo "State yok." }
                     '''
                 }
@@ -72,7 +78,7 @@ pipeline {
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
                         
-                        # DUZELTME: train.py artik ana dizinde
+                        # DUZELTME: train.py ana dizinde
                         python train.py
                     '''
                 }
@@ -87,6 +93,9 @@ pipeline {
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
                         
+                        # Scriptler hala responsible-scripts klasöründe mi? 
+                        # Eğer scriptler de ana dizindeyse yolu düzeltmelisin. 
+                        # Şimdilik klasörde olduklarını varsayıyorum:
                         python responsible-scripts/run_garak.py
                     '''
                 }
@@ -98,7 +107,7 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        # DUZELTME: --outfile yerine --output-file kullanıldı
+                        # --outfile yerine --output-file
                         cyclonedx-py requirements requirements.txt --output-format json --output-file sbom.json --force
                     '''
                 }
@@ -139,17 +148,23 @@ pipeline {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         
-                        dvc add data/training_state.json models/automm_sms_model
+                        # 1. DVC'ye ekle (Model artık ana dizinde)
+                        dvc add data/training_state.json automm_sms_model
                         dvc push
                         
+                        # 2. Git Ayarları
                         git config --global user.email "jenkins@bot.com"
                         git config --global user.name "Jenkins Bot"
                         
-                        git add data/training_state.json.dvc models/automm_sms_model.dvc
+                        # 3. Değişen .dvc dosyalarını ekle (yol düzeltildi)
+                        git add data/training_state.json.dvc automm_sms_model.dvc
                         
+                        # 4. Değişiklik varsa Commit & Push
                         $git_status = git status --porcelain
                         if ($git_status) {
                             git commit -m "CI: Pipeline basarili (ModelScan+Garak+Giskard) [skip ci]"
+                            
+                            # Token ile güvenli push
                             git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/plendroik/jenkins.git HEAD:main
                             echo "Git push basarili."
                         } else {
