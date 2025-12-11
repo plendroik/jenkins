@@ -4,7 +4,7 @@ import giskard
 import os
 import sys
 
-DATA_PATH = "data/final_processed_data.csv"
+DATA_PATH = "data/processed/final_data.csv"
 MODEL_PATH = "automm_sms_model"
 
 if not os.path.exists(MODEL_PATH):
