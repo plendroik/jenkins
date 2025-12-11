@@ -36,7 +36,7 @@ pipeline {
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONWARNINGS = "ignore"
                         dvc pull data/processed/final_data.csv.dvc -f
-                        try { dvc pull automm_sms_model.dvc -f } catch { echo "Model yok, ama egitimi atladigimiz icin sorun degil." }
+                        try { dvc pull automm_sms_model.dvc -f } catch { echo "Model yok, hizli test modundayiz, sorun degil." }
                         try { dvc pull data/training_state.json.dvc -f } catch { echo "State yok." }
                     '''
                 }
@@ -66,7 +66,8 @@ pipeline {
                     //    $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                     //    $env:PYTHONWARNINGS = "ignore"
                     //    $env:PYTHONIOENCODING = "utf-8"
-                    //    python run_garak.py
+                    //    # DUZELTME: Klasor yolu eklendi
+                    //    python responsible-scripts/run_garak.py
                     // '''
                 }
             }
@@ -77,11 +78,8 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        
-                        # DUZELTME: --force silindi, artik calismali!
+                        # --force olmadan
                         cyclonedx-py requirements requirements.txt --output-format json --output-file sbom.json
-                        
-                        echo "SBOM basariyla olusturuldu!"
                     '''
                 }
             }
@@ -94,7 +92,9 @@ pipeline {
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
-                        python check_fairness.py
+                        
+                        # DUZELTME: Dosya yolu responsible-scripts/ altina alindi
+                        python responsible-scripts/check_fairness.py
                     '''
                 }
             }
@@ -107,7 +107,9 @@ pipeline {
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONWARNINGS = "ignore"
                         $env:PYTHONIOENCODING = "utf-8"
-                        python scan_giskard.py
+                        
+                        # DUZELTME: Dosya yolu responsible-scripts/ altina alindi
+                        python responsible-scripts/scan_giskard.py
                     '''
                 }
             }
@@ -118,9 +120,6 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        
-                        # Model egitilmedigi icin DVC add hata verebilir, onu gecici olarak devre disi birakabilirsin
-                        # Ama simdilik sadece hata vermesin diye try-catch gibi dusunelim:
                         echo "Kayit asamasi (Test modunda oldugumuz icin push yapmiyoruz)"
                     '''
                 }
