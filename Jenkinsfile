@@ -43,10 +43,9 @@ pipeline {
             }
         }
 
-        stage('3. Egitim & ModelScan (ATLANDI ⏩)') {
+        stage('3. Egitim & ModelScan ') {
             steps {
                 script {
-                    echo "HIZLI TEST MODU: Egitim asamasi zaman kazanmak icin atlandi."
                      powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONPATH = "$PWD"
@@ -58,10 +57,10 @@ pipeline {
             }
         }
 
-        stage('4. Garak (Red Teaming) (ATLANDI ⏩)') {
+        stage('4. Garak (Red Teaming)') {
             steps {
                 script {
-                    echo "HIZLI TEST MODU: Garak asamasi atlandi."
+                    
                      powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
                         $env:PYTHONWARNINGS = "ignore"
