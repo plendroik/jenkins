@@ -10,7 +10,7 @@ import shutil
 MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 EXPERIMENT_NAME = "AutoML_SMS_Simulasyon"
 MODEL_PATH = "automm_sms_model"            
-DATA_PATH = "data/final_processed_data.csv" 
+DATA_PATH = "data/processed/final_data.csv" 
 STATE_PATH = "data/training_state.json"     
 BATCH_SIZE = 2000
 
