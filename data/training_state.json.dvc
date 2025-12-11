@@ -1,5 +1,5 @@
 outs:
-- md5: 4772ca4ba995f5ed22c2b8af8f3e6146
-  size: 2301
+- md5: fe63f049aec25618e2d360e809a1d23c
+  size: 45
   hash: md5
   path: training_state.json
