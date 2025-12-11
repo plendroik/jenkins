@@ -118,7 +118,23 @@ pipeline {
                 script {
                     powershell '''
                         $env:Path = "$PWD\\venv\\Scripts;$env:Path"
-                        echo "Kayit asamasi (Test modunda oldugumuz icin push yapmiyoruz)"
+                        
+                        dvc add data/training_state.json models/automm_sms_model
+                        dvc push
+                        
+                        git config --global user.email "jenkins@bot.com"
+                        git config --global user.name "Jenkins Bot"
+                        
+                        git add data/training_state.json.dvc models/automm_sms_model.dvc
+                        
+                        $git_status = git status --porcelain
+                        if ($git_status) {
+                            git commit -m "CI: Pipeline basarili (ModelScan+Garak+Giskard) [skip ci]"
+                            git push https://$env:GIT_CREDS_USR:$env:GIT_CREDS_PSW@github.com/plendroik/jenkins.git HEAD:main
+                            echo "Git push basarili."
+                        } else {
+                            echo "Degisiklik yok."
+                        }
                     '''
                 }
             }
