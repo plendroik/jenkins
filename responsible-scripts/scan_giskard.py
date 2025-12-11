@@ -3,35 +3,31 @@ from autogluon.multimodal import MultiModalPredictor
 import giskard
 import os
 import sys
+from multiprocessing import freeze_support
 
+# Sabitler
 DATA_PATH = "data/processed/final_data.csv"
 MODEL_PATH = "automm_sms_model"
 
-if not os.path.exists(MODEL_PATH):
-    print("Model yok, Giskard taraması atlanıyor.")
-    sys.exit(0)
+# --- ÖNEMLİ: Modeli Global Alanda Yükleme ---
+# Windows multiprocessing yapısında, prediction_function'ın bu değişkeni görebilmesi için
+# modelin global alanda tanımlı olması veya class yapısı kullanılması gerekir.
+# En basit çözüm, modeli burada yüklemektir.
+if os.path.exists(MODEL_PATH):
+    predictor = MultiModalPredictor.load(MODEL_PATH)
+else:
+    predictor = None  # Ana blokta kontrol edip çıkış yapacağız
 
-# Veriyi yükle
-df = pd.read_csv(DATA_PATH).head(100) 
-
-# Modeli yükle
-predictor = MultiModalPredictor.load(MODEL_PATH)
-
-# Giskard Dataset Tanımı
-# Not: Burada raw veri setini veriyoruz.
-giskard_dataset = giskard.Dataset(
-    df=df,
-    target="label",  
-    name="SMS Spam Dataset"
-)
-
-# --- DÜZELTME BURADA ---
 def prediction_function(df):
     """
     AutoGluon modeli 'digit_count', 'has_link', 'id' gibi feature'ları eğitimde gördüğü için
     tahmin anında da bunları ister. Giskard veriyi manipüle ederken bu türetilmiş sütunları
     göndermeyebilir. Bu yüzden tahmin öncesi bunları yeniden hesaplıyoruz.
     """
+    # Predictor yüklenememişse hata döndürme
+    if predictor is None:
+        raise ValueError("Model yüklenemediği için tahmin yapılamıyor.")
+
     df_proc = df.copy()
     
     # 'message' sütununun string olduğundan emin olalım (NaN hatası almamak için)
@@ -60,19 +56,46 @@ def prediction_function(df):
     # Model tahmini
     return predictor.predict_proba(df_proc)
 
-# Giskard Model Tanımı
-giskard_model = giskard.Model(
-    model=prediction_function,
-    model_type="classification",
-    classification_labels=predictor.class_labels,
-    # feature_names: Giskard'ın manipüle edeceği temel sütunları belirtir.
-    # Türetilmiş sütunları (digit_count vb.) buraya yazmak yerine yukarıda hesaplattık.
-    feature_names=["message", "source", "message_len", "word_count"], 
-    name="SMS AutoGluon Model"
-)
+# --- ANA ÇALIŞTIRMA BLOĞU ---
+# Bu blok, sonsuz döngü ve multiprocessing hatalarını engeller.
+if __name__ == "__main__":
+    # Windows için gerekli kilit (freeze) desteği
+    freeze_support()
 
-print("[Giskard] Güvenlik taraması (Scan) başlatılıyor. Bu işlem biraz sürebilir...")
-scan_results = giskard.scan(giskard_model, giskard_dataset)
+    if predictor is None:
+        print(f"HATA: '{MODEL_PATH}' bulunamadı. Giskard taraması iptal ediliyor.")
+        sys.exit(0)
 
-scan_results.to_html("giskard_report.html")
-print("[Başarılı] 'giskard_report.html' oluşturuldu.")
+    print("Model ve kütüphaneler yüklendi, veri hazırlanıyor...")
+
+    # Veriyi yükle (Sadece ana işlemde yüklenmeli)
+    try:
+        df = pd.read_csv(DATA_PATH).head(100)
+    except FileNotFoundError:
+        print(f"HATA: Veri dosyası '{DATA_PATH}' bulunamadı.")
+        sys.exit(1)
+
+    # Giskard Dataset Tanımı
+    giskard_dataset = giskard.Dataset(
+        df=df,
+        target="label",  
+        name="SMS Spam Dataset"
+    )
+
+    # Giskard Model Tanımı
+    giskard_model = giskard.Model(
+        model=prediction_function,
+        model_type="classification",
+        classification_labels=predictor.class_labels,
+        feature_names=["message", "source", "message_len", "word_count"], 
+        name="SMS AutoGluon Model"
+    )
+
+    print("[Giskard] Güvenlik taraması (Scan) başlatılıyor. Bu işlem biraz sürebilir...")
+    
+    # Taramayı başlat
+    scan_results = giskard.scan(giskard_model, giskard_dataset)
+
+    # Raporu kaydet
+    scan_results.to_html("giskard_report.html")
+    print("[Başarılı] 'giskard_report.html' oluşturuldu.")
